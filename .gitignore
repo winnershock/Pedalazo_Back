@@ -1,0 +1,3 @@
+#depencencas que no se deben subir al repositorio
+node_modules/
+package-lock.json
