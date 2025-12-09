@@ -30,24 +30,25 @@ module.exports = {
     },
 
     // 3. Productos más vendidos
-    masVendidos: async (req, res) => {
-        try {
-            const [rows] = await db.execute(`
-                SELECT 
-                    p.nombre_producto,
-                    SUM(dv.cantidad) AS total_vendido
-                FROM detalle_ventas dv
-                INNER JOIN productos p ON p.id_producto = dv.id_producto
-                GROUP BY dv.id_producto
-                ORDER BY total_vendido DESC
-                LIMIT 5;
-            `);
+masVendidos: async (req, res) => {
+    try {
+        const [rows] = await db.execute(`
+            SELECT 
+                p.nombre AS nombre_producto,
+                SUM(dv.cantidad) AS total_vendido
+            FROM detalle_ventas dv
+            INNER JOIN productos p ON p.id = dv.id_producto
+            GROUP BY dv.id_producto
+            ORDER BY total_vendido DESC
+            LIMIT 5;
+        `);
 
-            res.json(rows);
-        } catch (error) {
-            res.status(500).json({ error: "Error obteniendo productos más vendidos" });
-        }
-    },
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: "Error obteniendo productos más vendidos" });
+    }
+},
+
 
     // 4. Stock bajo (por ejemplo < 5 unidades)
     stockBajo: async (req, res) => {

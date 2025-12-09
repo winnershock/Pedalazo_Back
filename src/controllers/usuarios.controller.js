@@ -127,6 +127,23 @@ class UsuariosController {
             return res.status(500).json({ message: "Error interno del servidor" });
         }
     }
+
+    // ========================================
+    // === OBTENER TODOS LOS USUARIOS (ADMIN) ==
+    // ========================================
+    async obtenerUsuarios(req, res) {
+        try {
+            const [usuarios] = await db.query(
+                "SELECT id_usuario, nombre, apellido, cedula, telefono, correo, rol FROM usuarios"
+            );
+
+            return res.status(200).json(usuarios);
+
+        } catch (error) {
+            console.error("Error al obtener usuarios:", error);
+            return res.status(500).json({ message: "Error interno del servidor" });
+        }
+    }
 }
 
 module.exports = new UsuariosController();

@@ -22,6 +22,9 @@ router.post("/login", UsuariosController.login);
 // Perfil (solo usuario logueado)
 router.get("/perfil", auth, UsuariosController.perfil);
 
+// Obtener todos los usuarios (solo admin)
+router.get("/", auth, admin, UsuariosController.obtenerUsuarios);
+
 // Ejemplo de ruta SOLO para admin
 router.get("/admin-test", auth, admin, (req, res) => {
     res.json({ message: "Bienvenido admin, ruta OK" });

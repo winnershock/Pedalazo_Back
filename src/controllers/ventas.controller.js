@@ -1,6 +1,8 @@
 const db = require("../config/conexion_DB");
 
-// Crear una venta
+// ============================
+// CREAR VENTA (CLIENTE)
+// ============================
 exports.crearVenta = async (req, res) => {
     try {
         const { id_cliente, direccion, metodo_pago, items } = req.body;
@@ -9,7 +11,13 @@ exports.crearVenta = async (req, res) => {
             return res.status(400).json({ ok: false, mensaje: "Datos incompletos" });
         }
 
-        // 1. Crear la venta
+        // Validación de método de pago
+        const metodosValidos = ["Efectivo", "Tarjeta", "Nequi"];
+        if (!metodosValidos.includes(metodo_pago)) {
+            return res.status(400).json({ ok: false, mensaje: "Método de pago no válido" });
+        }
+
+        // 1. Crear venta con total en 0
         const [ventaResult] = await db.query(
             "INSERT INTO ventas (id_cliente, direccion, metodo_pago, total) VALUES (?, ?, ?, 0)",
             [id_cliente, direccion, metodo_pago]
@@ -19,26 +27,25 @@ exports.crearVenta = async (req, res) => {
 
         let totalVenta = 0;
 
-        // 2. Insertar cada item en detalle_ventas
+        // 2. Insertar items
         for (const item of items) {
             const { id_producto, cantidad, precio_unitario } = item;
 
             totalVenta += precio_unitario * cantidad;
 
-            // Guardar el detalle
             await db.query(
                 "INSERT INTO detalle_ventas (id_venta, id_producto, cantidad, precio_unitario) VALUES (?, ?, ?, ?)",
                 [id_venta, id_producto, cantidad, precio_unitario]
             );
 
-            // Restar stock
+            // Restar stock del producto
             await db.query(
-                "UPDATE productos SET stock = stock - ? WHERE id_producto = ?",
+                "UPDATE productos SET stock = stock - ? WHERE id = ?",
                 [cantidad, id_producto]
             );
         }
 
-        // 3. Actualizamos el total de la venta
+        // 3. Actualizar total de la venta
         await db.query(
             "UPDATE ventas SET total = ? WHERE id_venta = ?",
             [totalVenta, id_venta]
@@ -52,16 +59,19 @@ exports.crearVenta = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ ok: false, mensaje: "Error en el servidor" });
+        return res.status(500).json({ ok: false, mensaje: "Error en el servidor" });
     }
 };
 
-// Obtener todas las ventas (ADMIN)
+// ============================
+// OBTENER TODAS LAS VENTAS (ADMIN)
+// ============================
 exports.obtenerVentas = async (req, res) => {
     try {
         const [ventas] = await db.query(
             "SELECT * FROM ventas ORDER BY fecha DESC"
         );
+
         res.json(ventas);
     } catch (error) {
         console.error(error);
@@ -69,7 +79,9 @@ exports.obtenerVentas = async (req, res) => {
     }
 };
 
-// Obtener detalles de una venta por ID (ADMIN)
+// ============================
+// OBTENER VENTA POR ID (ADMIN)
+// ============================
 exports.obtenerVentaPorId = async (req, res) => {
     try {
         const { id } = req.params;
@@ -84,14 +96,14 @@ exports.obtenerVentaPorId = async (req, res) => {
         }
 
         const [items] = await db.query(
-            `SELECT dv.*, p.nombre_producto 
+            `SELECT dv.*, p.nombre 
             FROM detalle_ventas dv
-            INNER JOIN productos p ON dv.id_producto = p.id_producto
+            INNER JOIN productos p ON dv.id_producto = p.id
             WHERE dv.id_venta = ?`,
             [id]
         );
 
-        res.json({
+        return res.json({
             ...venta,
             items
         });

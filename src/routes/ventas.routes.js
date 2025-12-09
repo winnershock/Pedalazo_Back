@@ -2,13 +2,16 @@ const express = require("express");
 const router = express.Router();
 const ventasController = require("../controllers/ventas.controller");
 
-// Crear venta (cliente)
-router.post("/", ventasController.crearVenta);
+const auth = require("../middlewares/auth");
+const admin = require("../middlewares/admin");
 
-// Obtener ventas (solo admin)
-router.get("/", ventasController.obtenerVentas);
+// Cliente crea venta
+router.post("/", auth, ventasController.crearVenta);
 
-// Obtener detalle de una venta
-router.get("/:id", ventasController.obtenerVentaPorId);
+// Admin obtiene todas las ventas
+router.get("/", auth, admin, ventasController.obtenerVentas);
+
+// Admin obtiene detalle de venta
+router.get("/:id", auth, admin, ventasController.obtenerVentaPorId);
 
 module.exports = router;
